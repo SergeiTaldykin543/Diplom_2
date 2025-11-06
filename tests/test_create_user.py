@@ -9,7 +9,6 @@ class TestCreateUser:
     
     @allure.title("Успешное создание пользователя с валидными данными")
     def test_create_user_success(self, unique_user_data):
-        """Тест успешного создания пользователя с валидными данными"""
         api = ApiHandlers()
         
         response = api.register_user(
@@ -26,16 +25,13 @@ class TestCreateUser:
         assert response_data['user']['email'] == unique_user_data['email']
         assert response_data['user']['name'] == unique_user_data['name']
         
-        # Очистка тестовых данных
         api.login_user(unique_user_data['email'], unique_user_data['password'])
         api.delete_user()
     
     @allure.title("Создание пользователя с уже существующим email")
     def test_create_duplicate_user(self, authenticated_user):
-        """Тест создания пользователя с уже существующим email"""
         api = ApiHandlers()
         
-        # Пытаемся создать пользователя с тем же email
         response = api.register_user(
             authenticated_user['email'],
             authenticated_user['password'],
@@ -49,7 +45,6 @@ class TestCreateUser:
     
     @allure.title("Создание пользователя без email")
     def test_create_user_without_email(self):
-        """Тест создания пользователя без email"""
         api = ApiHandlers()
         
         response = api.register_user("", UserData.PASSWORD, UserData.NAME)
@@ -61,7 +56,6 @@ class TestCreateUser:
     
     @allure.title("Создание пользователя без пароля")
     def test_create_user_without_password(self):
-        """Тест создания пользователя без пароля"""
         api = ApiHandlers()
         
         response = api.register_user(UserData.EMAIL, "", UserData.NAME)
@@ -73,7 +67,6 @@ class TestCreateUser:
     
     @allure.title("Создание пользователя без имени")
     def test_create_user_without_name(self):
-        """Тест создания пользователя без имени"""
         api = ApiHandlers()
         
         response = api.register_user(UserData.EMAIL, UserData.PASSWORD, "")

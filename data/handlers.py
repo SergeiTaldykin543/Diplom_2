@@ -12,12 +12,10 @@ class ApiHandlers:
         self.token = None
     
     def _generate_unique_email(self):
-        """Генерирует уникальный email для тестов"""
         random_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
         return f"test_{random_suffix}@test.ru"
     
     def _get_headers(self):
-        """Возвращает заголовки с токеном если он есть"""
         headers = {'Content-Type': 'application/json'}
         if self.token:
             headers['Authorization'] = f'{self.token}'
@@ -35,7 +33,6 @@ class ApiHandlers:
         
         if response.status_code == 200:
             data = response.json()
-            # Сохраняем токен как есть (API возвращает его с 'Bearer ')
             self.token = data.get('accessToken')
             print(f"Token after registration: {self.token}")
         
@@ -52,7 +49,6 @@ class ApiHandlers:
         
         if response.status_code == 200:
             data = response.json()
-            # Сохраняем токен как есть
             self.token = data.get('accessToken')
             print(f"Token after login: {self.token}")
         
@@ -108,7 +104,6 @@ class ApiHandlers:
         url = f"{self.base_url}{UserData.INGREDIENTS_URL}"
         response = requests.get(url)
         
-        # Сохраняем ингредиенты для использования в тестах
         if response.status_code == 200:
             ingredients_list = [ingredient['_id'] for ingredient in response.json()['data'][:2]]
             IngredientsData.set_valid_ingredients(ingredients_list)

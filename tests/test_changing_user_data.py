@@ -7,10 +7,8 @@ class TestChangingUserData:
     
     @allure.title("Получение данных пользователя с авторизацией")
     def test_get_user_info_with_auth(self, authenticated_user):
-        """Тест получения информации о пользователе с авторизацией"""
         client = authenticated_user['client']
         
-        # Проверяем что токен установлен
         assert client.token is not None, "Token should be set for authenticated user"
         print(f"Token in test: {client.token}")
         
@@ -26,7 +24,6 @@ class TestChangingUserData:
     
     @allure.title("Обновление email пользователя")
     def test_update_user_email(self, authenticated_user):
-        """Тест обновления email пользователя"""
         client = authenticated_user['client']
         new_email = client._generate_unique_email()
         
@@ -42,7 +39,6 @@ class TestChangingUserData:
     
     @allure.title("Обновление имени пользователя")
     def test_update_user_name(self, authenticated_user):
-        """Тест обновления имени пользователя"""
         client = authenticated_user['client']
         
         response = client.update_user_info(name=UserData.NEW_NAME)
@@ -57,7 +53,6 @@ class TestChangingUserData:
     
     @allure.title("Обновление пароля пользователя")
     def test_update_user_password(self, authenticated_user):
-        """Тест обновления пароля пользователя"""
         client = authenticated_user['client']
         
         response = client.update_user_info(password=UserData.NEW_PASSWORD)
@@ -68,8 +63,7 @@ class TestChangingUserData:
         response_data = response.json()
         assert response_data['success'] == True
         
-        # Проверяем что с новым паролем можно залогиниться
-        new_client = type(client)()  # Создаем новый клиент
+        new_client = type(client)() 
         login_response = new_client.login_user(
             authenticated_user['email'], 
             UserData.NEW_PASSWORD
@@ -78,10 +72,8 @@ class TestChangingUserData:
     
     @allure.title("Обновление данных без авторизации")
     def test_update_user_info_without_auth(self, fresh_api_client, unique_user_data):
-        """Тест обновления данных пользователя без авторизации"""
         client = fresh_api_client
         
-        # Создаем пользователя
         register_response = client.register_user(
             unique_user_data['email'],
             unique_user_data['password'],
@@ -89,14 +81,11 @@ class TestChangingUserData:
         )
         assert register_response.status_code == 200
         
-        # Сбрасываем токен
         client.token = None
         
         response = client.update_user_info(email=UserData.NEW_EMAIL)
         
-        # Проверяем что метод возвращает None при отсутствии токена
         assert response is None
         
-        # Очистка - логинимся и удаляем пользователя
         client.login_user(unique_user_data['email'], unique_user_data['password'])
         client.delete_user()

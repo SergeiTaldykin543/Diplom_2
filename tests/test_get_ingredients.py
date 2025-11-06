@@ -7,7 +7,6 @@ class TestGetIngredients:
     
     @allure.title("Успешное получение списка ингредиентов")
     def test_get_ingredients_success(self):
-        """Тест успешного получения списка ингредиентов"""
         api = ApiHandlers()
         
         response = api.get_ingredients()
@@ -18,7 +17,6 @@ class TestGetIngredients:
         assert 'data' in response_data
         assert len(response_data['data']) > 0
         
-        # Проверяем структуру ингредиента
         ingredient = response_data['data'][0]
         required_fields = ['_id', 'name', 'type', 'proteins', 'fat', 
                           'carbohydrates', 'calories', 'price', 'image', 

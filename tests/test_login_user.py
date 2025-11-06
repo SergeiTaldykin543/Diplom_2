@@ -9,10 +9,8 @@ class TestLoginUser:
     
     @allure.title("Успешный логин пользователя с валидными данными")
     def test_login_user_success(self, authenticated_user):
-        """Тест успешного входа в систему с валидными данными"""
         assert authenticated_user is not None, "Пользователь не был создан"
         
-        # Сбрасываем токен и логинимся заново
         authenticated_user['client'].token = None
         response = authenticated_user['client'].login_user(
             authenticated_user['email'], 
@@ -29,10 +27,8 @@ class TestLoginUser:
     
     @allure.title("Логин с неверным паролем")
     def test_login_wrong_password(self, authenticated_user):
-        """Тест входа с неверным паролем"""
         assert authenticated_user is not None, "Пользователь не был создан"
         
-        # Пытаемся залогиниться с неверным паролем
         authenticated_user['client'].token = None
         response = authenticated_user['client'].login_user(
             authenticated_user['email'], 
@@ -46,10 +42,8 @@ class TestLoginUser:
     
     @allure.title("Логин с неверным email")
     def test_login_wrong_email(self, authenticated_user):
-        """Тест входа с неверным email"""
         assert authenticated_user is not None, "Пользователь не был создан"
         
-        # Пытаемся залогиниться с неверным email
         authenticated_user['client'].token = None
         response = authenticated_user['client'].login_user(
             UserData.WRONG_EMAIL, 
@@ -63,10 +57,7 @@ class TestLoginUser:
     
     @allure.title("Логин без пароля")
     def test_login_without_password(self, authenticated_user):
-        """Тест входа без пароля"""
-        assert authenticated_user is not None, "Пользователь не был создан"
-        
-        # Пытаемся залогиниться без пароля
+        assert authenticated_user is not None, "Пользователь не был создан" 
         authenticated_user['client'].token = None
         response = authenticated_user['client'].login_user(
             authenticated_user['email'], 

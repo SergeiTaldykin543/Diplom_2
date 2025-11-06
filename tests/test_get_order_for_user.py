@@ -7,10 +7,8 @@ class TestGetOrderForUser:
     
     @allure.title("Получение заказов пользователя с авторизацией")
     def test_get_user_orders_with_auth(self, user_with_order):
-        """Тест получения заказов авторизованного пользователя"""
         client = user_with_order['client']
         
-        # Проверяем что токен установлен
         assert client.token is not None, "Token should be set for authenticated user"
         print(f"Token in get orders test: {client.token}")
         
@@ -25,7 +23,6 @@ class TestGetOrderForUser:
         assert 'total' in response_data
         assert 'totalToday' in response_data
         
-        # Проверяем структуру заказа если есть заказы
         if len(response_data['orders']) > 0:
             order = response_data['orders'][0]
             required_order_fields = ['ingredients', '_id', 'status', 'number', 'createdAt', 'updatedAt']
@@ -34,16 +31,12 @@ class TestGetOrderForUser:
     
     @allure.title("Получение заказов пользователя без авторизации")
     def test_get_user_orders_without_auth(self, fresh_api_client):
-        """Тест получения заказов без авторизации"""
         client = fresh_api_client
         response = client.get_user_orders()
-        
-        # Метод должен возвращать None при отсутствии токена
         assert response is None
     
     @allure.title("Получение всех заказов")
     def test_get_all_orders(self, fresh_api_client):
-        """Тест получения всех заказов (без авторизации)"""
         client = fresh_api_client
         response = client.get_all_orders()
         
