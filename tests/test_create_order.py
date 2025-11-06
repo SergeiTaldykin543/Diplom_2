@@ -1,81 +1,54 @@
-import allure
 import pytest
-import requests
-from data.handlers import Urls, Handlers
-from data.ingredients_data import Ingredient
+import allure
+from data.ingredients_data import IngredientsData
+from data.expected_responses import ExpectedResponses
 
 
 class TestCreateOrder:
-    @allure.title("Создание заказа с авторизацией и реальными ингредиентами")
-    def test_create_order_with_auth_and_ingredients_success(self, auth_headers):
-        correct_order_data = Ingredient.get_correct_ingredients_data()
+    
+    @allure.title("Создание заказа с авторизацией")
+    def test_create_order_with_auth(self, user_with_order):
+        """Тест создания заказа авторизованным пользователем"""
+        # Убедимся что у нас есть ингредиенты
+        assert len(IngredientsData.VALID_INGREDIENTS) > 0, "Нет доступных ингредиентов"
         
-        response = requests.post(
-            f"{Urls.MAIN_URL}{Handlers.MAKE_ORDER}",
-            json=correct_order_data,
-            headers=auth_headers,
-            timeout=10
-        )
+        response = user_with_order['client'].create_order(IngredientsData.VALID_INGREDIENTS)
         
-        # Проверяем успешное создание заказа
-        assert response.status_code == 200
-        assert response.json()["success"] == True
-        assert "name" in response.json()
-
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}. Response: {response.text}"
+        response_data = response.json()
+        assert response_data['success'] == True
+        assert 'name' in response_data
+        assert 'order' in response_data
+        assert 'number' in response_data['order']
+    
     @allure.title("Создание заказа без авторизации")
-    def test_create_order_without_auth_error(self):
-        correct_order_data = Ingredient.get_correct_ingredients_data()
+    def test_create_order_without_auth(self, api_client):
+        """Тест создания заказа без авторизации"""
+        # Сначала получаем ингредиенты
+        ingredients_response = api_client.get_ingredients()
+        assert ingredients_response.status_code == 200
+        assert len(IngredientsData.VALID_INGREDIENTS) > 0
         
-        response = requests.post(
-            f"{Urls.MAIN_URL}{Handlers.MAKE_ORDER}",
-            json=correct_order_data,
-            headers=Handlers.headers,
-            timeout=10
-        )
+        response = api_client.create_order(IngredientsData.VALID_INGREDIENTS)
         
-        # API может возвращать 200 или 401 для неавторизованных пользователей
-        assert response.status_code in [200, 401]
-        if response.status_code == 200:
-            assert response.json()["success"] == True
-        else:
-            assert response.json()["success"] == False
-
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}. Response: {response.text}"
+        response_data = response.json()
+        assert response_data['success'] == True
+    
     @allure.title("Создание заказа без ингредиентов")
-    def test_create_order_without_ingredients_error(self, auth_headers):
-        empty_data = Ingredient.get_empty_ingredients_data()
+    def test_create_order_without_ingredients(self, authenticated_user):
+        """Тест создания заказа без ингредиентов"""
+        response = authenticated_user['client'].create_order(IngredientsData.EMPTY_INGREDIENTS)
         
-        response = requests.post(
-            f"{Urls.MAIN_URL}{Handlers.MAKE_ORDER}",
-            json=empty_data,
-            headers=auth_headers,
-            timeout=10
-        )
+        assert response.status_code == 400, f"Expected 400, got {response.status_code}. Response: {response.text}"
+        response_data = response.json()
+        assert response_data['success'] == False
+        assert response_data['message'] == ExpectedResponses.INGREDIENTS_REQUIRED
+    
+    @allure.title("Создание заказа с невалидными ингредиентами")
+    def test_create_order_invalid_ingredients(self, authenticated_user):
+        """Тест создания заказа с невалидными ингредиентами"""
+        response = authenticated_user['client'].create_order(IngredientsData.INVALID_INGREDIENTS)
         
-        # API может возвращать 400 или 403
-        assert response.status_code in [400, 403]
-        assert response.json()["success"] == False
-        if response.status_code == 400:
-            assert "Ingredient ids must be provided" in response.json()["message"]
-
-    @allure.title("Создание заказа с неверным хешем ингредиентов")
-    def test_create_order_with_invalid_ingredients_error(self, auth_headers):
-        invalid_data = Ingredient.get_incorrect_ingredients_data()
-        
-        response = requests.post(
-            f"{Urls.MAIN_URL}{Handlers.MAKE_ORDER}",
-            json=invalid_data,
-            headers=auth_headers,
-            timeout=10
-        )
-        
-        # API может возвращать 500 или другую ошибку
-        assert response.status_code >= 400
-        
-        # Обрабатываем случай когда сервер возвращает HTML вместо JSON
-        try:
-            response_data = response.json()
-            assert response_data["success"] == False
-        except ValueError:
-            # Если ответ не JSON (например, HTML страница с ошибкой)
-            # Это допустимо для 500 ошибок
-            pass
+        # API может возвращать 500 для невалидных ингредиентов
+        assert response.status_code in [400, 500], f"Expected 400 or 500, got {response.status_code}. Response: {response.text}"

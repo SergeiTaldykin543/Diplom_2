@@ -1,36 +1,28 @@
-import allure
 import pytest
-import requests
-from data.handlers import Urls, Handlers
-from data.ingredients_data import Ingredient
+import allure
+from data.handlers import ApiHandlers
 
 
 class TestGetIngredients:
-    @allure.title("Получение данных об ингредиентах")
+    
+    @allure.title("Успешное получение списка ингредиентов")
     def test_get_ingredients_success(self):
-        # Получаем ингредиенты напрямую в тесте
-        ingredients = Ingredient.get_real_ingredients()
+        """Тест успешного получения списка ингредиентов"""
+        api = ApiHandlers()
         
-        # Если API недоступно, тест будет пропущен
-        assert len(ingredients) > 0, "Список ингредиентов пуст"
-        
-        # Проверяем структуру ингредиентов
-        for ingredient in ingredients[:3]:
-            assert "_id" in ingredient
-            assert "name" in ingredient
-            assert "type" in ingredient
-
-    @allure.title("Получение ингредиентов проверяет структуру ответа")
-    def test_get_ingredients_structure(self):
-        try:
-            response = requests.get(
-                f"{Urls.MAIN_URL}{Handlers.INGREDIENTS}",
-                timeout=10
-            )
-        except requests.exceptions.RequestException:
-            pytest.fail("Не удалось получить ингредиенты")
-            return
+        response = api.get_ingredients()
         
         assert response.status_code == 200
-        assert response.json()["success"] == True
-        assert "data" in response.json()
+        response_data = response.json()
+        assert response_data['success'] == True
+        assert 'data' in response_data
+        assert len(response_data['data']) > 0
+        
+        # Проверяем структуру ингредиента
+        ingredient = response_data['data'][0]
+        required_fields = ['_id', 'name', 'type', 'proteins', 'fat', 
+                          'carbohydrates', 'calories', 'price', 'image', 
+                          'image_mobile', 'image_large', '__v']
+        
+        for field in required_fields:
+            assert field in ingredient, f"Отсутствует поле {field}"

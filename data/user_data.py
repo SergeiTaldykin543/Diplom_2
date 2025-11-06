@@ -1,47 +1,30 @@
-from faker import Faker
-
-
-class User:
-
-    @staticmethod
-    def create_data_user():
-        fake = Faker()
-
-        reg_data = {
-            "email": fake.email(),
-            "password": fake.password(),
-            "name": fake.name()}
-        return reg_data
-
-    data_correct = {
-        "email": 'tets_2503@yandex.ru',
-        "password": "password"}
-
-    data_negative = {
-        "email": 'nikita_novikov_24@yandex.ru',
-        "password": "password"}
-
-    data_double = {
-        "email": 'nikita_novikov_24@yandex.ru',
-        "password": "password",
-        "name": "Username"}
-
-    data_without_email = {
-        "email": '',
-        "password": "password",
-        "name": "Username"}
-
-    data_without_password = {
-        "email": 'nikita_novikov_24@yandex.ru',
-        "password": "",
-        "name": "Username"}
-
-    data_without_name = {
-        "email": 'nikita_novikov_24@yandex.ru',
-        "password": "password",
-        "name": ""}
-
-    data_updated = {
-        "email": 'nikita_novikov_24@yandex.ru',
-        "password": "password",
-        "name": "nikita"}
+class UserData:
+    BASE_URL = "https://stellarburgers.education-services.ru"
+    
+    # Основные тестовые данные
+    EMAIL = "sergey_31@test.ru"
+    PASSWORD = "1234567S"
+    NAME = "Taldykin_31"
+    
+    # Данные для обновления
+    NEW_EMAIL = "new_sergey_31@test.ru"
+    NEW_PASSWORD = "new1234567S"
+    NEW_NAME = "New_Taldykin_31"
+    
+    # Невалидные данные для тестов
+    INVALID_EMAIL = "invalid_email"
+    INVALID_PASSWORD = "123"
+    EMPTY_FIELD = ""
+    WRONG_EMAIL = "wrong@email.com"
+    WRONG_PASSWORD = "wrong_password"
+    
+    # API endpoints
+    CREATE_USER_URL = "/api/auth/register"
+    LOGIN_URL = "/api/auth/login"
+    USER_URL = "/api/auth/user"
+    LOGOUT_URL = "/api/auth/logout"
+    TOKEN_URL = "/api/auth/token"
+    ORDERS_URL = "/api/orders"
+    ORDERS_ALL_URL = "/api/orders/all"
+    INGREDIENTS_URL = "/api/ingredients"
+    PASSWORD_RESET_URL = "/api/password-reset"

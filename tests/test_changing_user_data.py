@@ -1,45 +1,102 @@
-import allure
 import pytest
-import requests
-from data.handlers import Urls, Handlers
+import allure
+from data.user_data import UserData
 
 
 class TestChangingUserData:
-    @allure.title("Обновление данных пользователя")
-    def test_update_user_data_success(self, create_and_delete_user):
-        user_data, token = create_and_delete_user
+    
+    @allure.title("Получение данных пользователя с авторизацией")
+    def test_get_user_info_with_auth(self, authenticated_user):
+        """Тест получения информации о пользователе с авторизацией"""
+        client = authenticated_user['client']
         
-        headers_with_token = Handlers.headers.copy()
-        # Токен уже содержит "Bearer ", поэтому не добавляем его снова
-        headers_with_token["Authorization"] = token
+        # Проверяем что токен установлен
+        assert client.token is not None, "Token should be set for authenticated user"
+        print(f"Token in test: {client.token}")
         
-        # Обновляем данные пользователя
-        response = requests.patch(
-            f"{Urls.MAIN_URL}{Handlers.CHANGE_USER_DATA}",
-            json={"name": "Новое Имя", "email": user_data["email"]},
-            headers=headers_with_token,
-            timeout=10
+        response = client.get_user_info()
+        
+        assert response is not None, "Response should not be None with valid token"
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}. Response: {response.text}"
+        
+        response_data = response.json()
+        assert response_data['success'] == True
+        assert response_data['user']['email'] == authenticated_user['email']
+        assert response_data['user']['name'] == authenticated_user['name']
+    
+    @allure.title("Обновление email пользователя")
+    def test_update_user_email(self, authenticated_user):
+        """Тест обновления email пользователя"""
+        client = authenticated_user['client']
+        new_email = client._generate_unique_email()
+        
+        response = client.update_user_info(email=new_email)
+        
+        assert response is not None, "Response should not be None with valid token"
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}. Response: {response.text}"
+        
+        response_data = response.json()
+        assert response_data['success'] == True
+        assert response_data['user']['email'] == new_email
+        assert response_data['user']['name'] == authenticated_user['name']
+    
+    @allure.title("Обновление имени пользователя")
+    def test_update_user_name(self, authenticated_user):
+        """Тест обновления имени пользователя"""
+        client = authenticated_user['client']
+        
+        response = client.update_user_info(name=UserData.NEW_NAME)
+        
+        assert response is not None, "Response should not be None with valid token"
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}. Response: {response.text}"
+        
+        response_data = response.json()
+        assert response_data['success'] == True
+        assert response_data['user']['email'] == authenticated_user['email']
+        assert response_data['user']['name'] == UserData.NEW_NAME
+    
+    @allure.title("Обновление пароля пользователя")
+    def test_update_user_password(self, authenticated_user):
+        """Тест обновления пароля пользователя"""
+        client = authenticated_user['client']
+        
+        response = client.update_user_info(password=UserData.NEW_PASSWORD)
+        
+        assert response is not None, "Response should not be None with valid token"
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}. Response: {response.text}"
+        
+        response_data = response.json()
+        assert response_data['success'] == True
+        
+        # Проверяем что с новым паролем можно залогиниться
+        new_client = type(client)()  # Создаем новый клиент
+        login_response = new_client.login_user(
+            authenticated_user['email'], 
+            UserData.NEW_PASSWORD
         )
+        assert login_response.status_code == 200
+    
+    @allure.title("Обновление данных без авторизации")
+    def test_update_user_info_without_auth(self, fresh_api_client, unique_user_data):
+        """Тест обновления данных пользователя без авторизации"""
+        client = fresh_api_client
         
-        # API может возвращать 200 при успехе или 403 при ошибках авторизации
-        if response.status_code == 200:
-            assert response.json()["success"] == True
-            assert response.json()["user"]["name"] == "Новое Имя"
-        else:
-            # Если 403, проверяем структуру ошибки
-            assert response.status_code == 403
-            assert response.json()["success"] == False
-            assert "message" in response.json()
-
-    @allure.title("Обновление данных пользователя без авторизации")
-    def test_update_user_data_without_auth_error(self):
-        response = requests.patch(
-            f"{Urls.MAIN_URL}{Handlers.CHANGE_USER_DATA}",
-            json={"name": "Новое Имя", "email": "test@yandex.ru"},
-            headers=Handlers.headers,
-            timeout=10
+        # Создаем пользователя
+        register_response = client.register_user(
+            unique_user_data['email'],
+            unique_user_data['password'],
+            unique_user_data['name']
         )
+        assert register_response.status_code == 200
         
-        assert response.status_code == 401
-        assert response.json()["success"] == False
-        assert "You should be authorised" in response.json()["message"]
+        # Сбрасываем токен
+        client.token = None
+        
+        response = client.update_user_info(email=UserData.NEW_EMAIL)
+        
+        # Проверяем что метод возвращает None при отсутствии токена
+        assert response is None
+        
+        # Очистка - логинимся и удаляем пользователя
+        client.login_user(unique_user_data['email'], unique_user_data['password'])
+        client.delete_user()

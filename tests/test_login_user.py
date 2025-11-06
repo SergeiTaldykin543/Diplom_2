@@ -1,108 +1,79 @@
-import allure
 import pytest
-import requests
-from data.handlers import Urls, Handlers
-from data.user_data import User
+import allure
+from data.handlers import ApiHandlers
+from data.user_data import UserData
+from data.expected_responses import ExpectedResponses
 
 
 class TestLoginUser:
-    @allure.title("Успешный логин под существующим пользователем")
-    def test_login_existing_user_success(self, create_and_delete_user):
-        user_data, _ = create_and_delete_user
+    
+    @allure.title("Успешный логин пользователя с валидными данными")
+    def test_login_user_success(self, authenticated_user):
+        """Тест успешного входа в систему с валидными данными"""
+        assert authenticated_user is not None, "Пользователь не был создан"
         
-        login_data = {
-            "email": user_data["email"],
-            "password": user_data["password"]
-        }
-        
-        try:
-            response = requests.post(
-                f"{Urls.MAIN_URL}{Handlers.LOGIN}",
-                json=login_data,
-                headers=Handlers.headers,
-                timeout=10
-            )
-        except requests.exceptions.RequestException:
-            pytest.fail("Не удалось выполнить логин")
-            return
+        # Сбрасываем токен и логинимся заново
+        authenticated_user['client'].token = None
+        response = authenticated_user['client'].login_user(
+            authenticated_user['email'], 
+            authenticated_user['password']
+        )
         
         assert response.status_code == 200
-        assert response.json()["success"] == True
-        assert "accessToken" in response.json()
-
-    @allure.title("Логин с неверным email")
-    def test_login_with_wrong_email_error(self):
-        login_data = User.data_negative
-        
-        try:
-            response = requests.post(
-                f"{Urls.MAIN_URL}{Handlers.LOGIN}",
-                json=login_data,
-                headers=Handlers.headers,
-                timeout=10
-            )
-        except requests.exceptions.RequestException:
-            pytest.fail("Не удалось выполнить логин")
-            return
-        
-        assert response.status_code == 401
-        assert response.json()["success"] == False
-
+        response_data = response.json()
+        assert response_data['success'] == True
+        assert 'accessToken' in response_data
+        assert 'refreshToken' in response_data
+        assert response_data['user']['email'] == authenticated_user['email']
+        assert response_data['user']['name'] == authenticated_user['name']
+    
     @allure.title("Логин с неверным паролем")
-    def test_login_with_wrong_password_error(self, create_and_delete_user):
-        user_data, _ = create_and_delete_user
+    def test_login_wrong_password(self, authenticated_user):
+        """Тест входа с неверным паролем"""
+        assert authenticated_user is not None, "Пользователь не был создан"
         
-        login_data = {
-            "email": user_data["email"],
-            "password": "wrong_password"
-        }
-        
-        try:
-            response = requests.post(
-                f"{Urls.MAIN_URL}{Handlers.LOGIN}",
-                json=login_data,
-                headers=Handlers.headers,
-                timeout=10
-            )
-        except requests.exceptions.RequestException:
-            pytest.fail("Не удалось выполнить логин")
-            return
+        # Пытаемся залогиниться с неверным паролем
+        authenticated_user['client'].token = None
+        response = authenticated_user['client'].login_user(
+            authenticated_user['email'], 
+            UserData.WRONG_PASSWORD
+        )
         
         assert response.status_code == 401
-        assert response.json()["success"] == False
-
-    @allure.title("Логин без email")
-    def test_login_without_email_error(self):
-        login_data = {"email": "", "password": "password"}
+        response_data = response.json()
+        assert response_data['success'] == False
+        assert response_data['message'] == ExpectedResponses.INCORRECT_CREDENTIALS
+    
+    @allure.title("Логин с неверным email")
+    def test_login_wrong_email(self, authenticated_user):
+        """Тест входа с неверным email"""
+        assert authenticated_user is not None, "Пользователь не был создан"
         
-        try:
-            response = requests.post(
-                f"{Urls.MAIN_URL}{Handlers.LOGIN}",
-                json=login_data,
-                headers=Handlers.headers,
-                timeout=10
-            )
-        except requests.exceptions.RequestException:
-            pytest.fail("Не удалось выполнить логин")
-            return
+        # Пытаемся залогиниться с неверным email
+        authenticated_user['client'].token = None
+        response = authenticated_user['client'].login_user(
+            UserData.WRONG_EMAIL, 
+            authenticated_user['password']
+        )
         
         assert response.status_code == 401
-        assert response.json()["success"] == False
-
+        response_data = response.json()
+        assert response_data['success'] == False
+        assert response_data['message'] == ExpectedResponses.INCORRECT_CREDENTIALS
+    
     @allure.title("Логин без пароля")
-    def test_login_without_password_error(self):
-        login_data = {"email": "test@yandex.ru", "password": ""}
+    def test_login_without_password(self, authenticated_user):
+        """Тест входа без пароля"""
+        assert authenticated_user is not None, "Пользователь не был создан"
         
-        try:
-            response = requests.post(
-                f"{Urls.MAIN_URL}{Handlers.LOGIN}",
-                json=login_data,
-                headers=Handlers.headers,
-                timeout=10
-            )
-        except requests.exceptions.RequestException:
-            pytest.fail("Не удалось выполнить логин")
-            return
+        # Пытаемся залогиниться без пароля
+        authenticated_user['client'].token = None
+        response = authenticated_user['client'].login_user(
+            authenticated_user['email'], 
+            ""
+        )
         
         assert response.status_code == 401
-        assert response.json()["success"] == False
+        response_data = response.json()
+        assert response_data['success'] == False
+        assert response_data['message'] == ExpectedResponses.INCORRECT_CREDENTIALS
