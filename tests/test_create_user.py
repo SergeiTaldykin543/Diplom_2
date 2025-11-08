@@ -25,7 +25,6 @@ class TestCreateUser:
         assert response_data['user']['email'] == unique_user_data['email']
         assert response_data['user']['name'] == unique_user_data['name']
         
-        api.login_user(unique_user_data['email'], unique_user_data['password'])
         api.delete_user()
     
     @allure.title("Создание пользователя с уже существующим email")

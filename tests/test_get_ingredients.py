@@ -23,4 +23,4 @@ class TestGetIngredients:
                           'image_mobile', 'image_large', '__v']
         
         for field in required_fields:
-            assert field in ingredient, f"Отсутствует поле {field}"
+            assert field in ingredient

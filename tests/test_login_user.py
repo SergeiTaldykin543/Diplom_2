@@ -8,13 +8,11 @@ from data.expected_responses import ExpectedResponses
 class TestLoginUser:
     
     @allure.title("Успешный логин пользователя с валидными данными")
-    def test_login_user_success(self, authenticated_user):
-        assert authenticated_user is not None, "Пользователь не был создан"
-        
-        authenticated_user['client'].token = None
-        response = authenticated_user['client'].login_user(
-            authenticated_user['email'], 
-            authenticated_user['password']
+    def test_login_user_success(self, registered_user):
+        registered_user['client'].token = None
+        response = registered_user['client'].login_user(
+            registered_user['email'], 
+            registered_user['password']
         )
         
         assert response.status_code == 200
@@ -22,16 +20,14 @@ class TestLoginUser:
         assert response_data['success'] == True
         assert 'accessToken' in response_data
         assert 'refreshToken' in response_data
-        assert response_data['user']['email'] == authenticated_user['email']
-        assert response_data['user']['name'] == authenticated_user['name']
+        assert response_data['user']['email'] == registered_user['email']
+        assert response_data['user']['name'] == registered_user['name']
     
     @allure.title("Логин с неверным паролем")
-    def test_login_wrong_password(self, authenticated_user):
-        assert authenticated_user is not None, "Пользователь не был создан"
-        
-        authenticated_user['client'].token = None
-        response = authenticated_user['client'].login_user(
-            authenticated_user['email'], 
+    def test_login_wrong_password(self, registered_user):
+        registered_user['client'].token = None
+        response = registered_user['client'].login_user(
+            registered_user['email'], 
             UserData.WRONG_PASSWORD
         )
         
@@ -41,13 +37,11 @@ class TestLoginUser:
         assert response_data['message'] == ExpectedResponses.INCORRECT_CREDENTIALS
     
     @allure.title("Логин с неверным email")
-    def test_login_wrong_email(self, authenticated_user):
-        assert authenticated_user is not None, "Пользователь не был создан"
-        
-        authenticated_user['client'].token = None
-        response = authenticated_user['client'].login_user(
+    def test_login_wrong_email(self, registered_user):
+        registered_user['client'].token = None
+        response = registered_user['client'].login_user(
             UserData.WRONG_EMAIL, 
-            authenticated_user['password']
+            registered_user['password']
         )
         
         assert response.status_code == 401
@@ -56,11 +50,10 @@ class TestLoginUser:
         assert response_data['message'] == ExpectedResponses.INCORRECT_CREDENTIALS
     
     @allure.title("Логин без пароля")
-    def test_login_without_password(self, authenticated_user):
-        assert authenticated_user is not None, "Пользователь не был создан" 
-        authenticated_user['client'].token = None
-        response = authenticated_user['client'].login_user(
-            authenticated_user['email'], 
+    def test_login_without_password(self, registered_user):
+        registered_user['client'].token = None
+        response = registered_user['client'].login_user(
+            registered_user['email'], 
             ""
         )
         

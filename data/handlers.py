@@ -11,7 +11,7 @@ class ApiHandlers:
         self.base_url = UserData.BASE_URL
         self.token = None
     
-    def _generate_unique_email(self):
+    def generate_unique_email(self):
         random_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
         return f"test_{random_suffix}@test.ru"
     
@@ -34,7 +34,6 @@ class ApiHandlers:
         if response.status_code == 200:
             data = response.json()
             self.token = data.get('accessToken')
-            print(f"Token after registration: {self.token}")
         
         return response
     
@@ -50,43 +49,45 @@ class ApiHandlers:
         if response.status_code == 200:
             data = response.json()
             self.token = data.get('accessToken')
-            print(f"Token after login: {self.token}")
         
         return response
     
     @allure.step("Удаление пользователя")
     def delete_user(self):
         if not self.token:
-            print("No token available for deletion")
             return None
             
         url = f"{self.base_url}{UserData.USER_URL}"
         headers = self._get_headers()
         response = requests.delete(url, headers=headers)
-        print(f"Delete user response: {response.status_code}")
         return response
     
     @allure.step("Получение информации о пользователе")
     def get_user_info(self):
         if not self.token:
-            print("No token available for get_user_info")
             return None
             
         url = f"{self.base_url}{UserData.USER_URL}"
         headers = self._get_headers()
         response = requests.get(url, headers=headers)
-        print(f"Get user info response: {response.status_code}, token: {self.token}")
         return response
     
     @allure.step("Обновление информации о пользователе")
     def update_user_info(self, email=None, name=None, password=None):
         if not self.token:
-            print("No token available for update_user_info")
             return None
             
         url = f"{self.base_url}{UserData.USER_URL}"
         headers = self._get_headers()
         
+        # Создаем payload только с переданными значениями
+        payload = self._build_update_payload(email, name, password)
+            
+        response = requests.patch(url, headers=headers, json=payload)
+        return response
+    
+    def _build_update_payload(self, email, name, password):
+        """Вспомогательный метод для построения payload"""
         payload = {}
         if email is not None:
             payload['email'] = email
@@ -94,10 +95,22 @@ class ApiHandlers:
             payload['name'] = name
         if password is not None:
             payload['password'] = password
-            
-        response = requests.patch(url, headers=headers, json=payload)
-        print(f"Update user info response: {response.status_code}")
-        return response
+        return payload
+    
+    @allure.step("Обновление email пользователя")
+    def update_user_email(self, email):
+        """Отдельный метод для обновления только email"""
+        return self.update_user_info(email=email)
+    
+    @allure.step("Обновление имени пользователя")
+    def update_user_name(self, name):
+        """Отдельный метод для обновления только имени"""
+        return self.update_user_info(name=name)
+    
+    @allure.step("Обновление пароля пользователя")
+    def update_user_password(self, password):
+        """Отдельный метод для обновления только пароля"""
+        return self.update_user_info(password=password)
     
     @allure.step("Получение списка ингредиентов")
     def get_ingredients(self):
@@ -117,19 +130,16 @@ class ApiHandlers:
             
         payload = {"ingredients": ingredients}
         response = requests.post(url, headers=headers, json=payload)
-        print(f"Create order response: {response.status_code}")
         return response
     
     @allure.step("Получение заказов пользователя")
     def get_user_orders(self):
         if not self.token:
-            print("No token available for get_user_orders")
             return None
             
         url = f"{self.base_url}{UserData.ORDERS_URL}"
         headers = self._get_headers()
         response = requests.get(url, headers=headers)
-        print(f"Get user orders response: {response.status_code}")
         return response
     
     @allure.step("Получение всех заказов")
